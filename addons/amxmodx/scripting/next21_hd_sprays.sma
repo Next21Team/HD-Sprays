@@ -595,10 +595,10 @@ bool:load_sprays(const szSpraysFile[])
     while (iFile && !feof(iFile))
     {
         fgets(iFile, szLineData, charsmax(szLineData))
-        if (!szLineData[0] || szLineData[0] == ';')
+        if (szLineData[0] == ';')
             continue
 
-        parse(szLineData, szSprayName, charsmax(szSprayName),
+        new iArgsNum = parse(szLineData, szSprayName, charsmax(szSprayName),
             szSprayModel, charsmax(szSprayModel),
             szSprayType, charsmax(szSprayType),
             szSprayBody, charsmax(szSprayBody),
@@ -609,6 +609,9 @@ bool:load_sprays(const szSpraysFile[])
             szSprayScale, charsmax(szSprayScale),
             szSprayCost, charsmax(szSprayCost),
             szSprayAccess, charsmax(szSprayAccess))
+
+        if (iArgsNum < 11)
+            continue
 
         formatex(szModelPath, charsmax(szModelPath), "%s/%s", SPRAYS_PATH, szSprayModel)
 
