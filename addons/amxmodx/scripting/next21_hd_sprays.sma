@@ -19,7 +19,7 @@ new const VERSION[] =	"Polarhigh & Psycrow"
 
 #define IMPULSE_SPRAY           201
 
-#define STATUS_TEXT_MAXLEN      48
+#define STATUS_TEXT_MAXLEN      64
 #define STATUS_TEXT_DELAY       0.1
 
 new const SPRAYS_PATH[] = "models/next21_sprays"
@@ -72,6 +72,7 @@ new
     g_iTotalSprays, g_iSpraysNow,
     g_iPlayerSpray[MAX_PLAYERS + 1],
     g_szStatusText[MAX_PLAYERS + 1][STATUS_TEXT_MAXLEN],
+    g_iPlayerShowOwnerSprayEnt[MAX_PLAYERS + 1],
     g_pCvars[CVAR_LIST],
     g_msgStatusText,
     g_fwdSetUserSpray, g_fwdGetRandomSpray,
@@ -189,6 +190,7 @@ public plugin_end()
 public client_authorized(iPlayer)
 {
     g_iPlayerSpray[iPlayer] = NULL_SPRAY_ID
+    g_iPlayerShowOwnerSprayEnt[iPlayer] = NULLENT
 
     new szKey[24], szValue[SPRAY_NAME_LEN], iTimestamp
     get_user_authid(iPlayer, szKey, charsmax(szKey))
@@ -770,24 +772,25 @@ show_spray_owner(iPlayer)
         return
     fNextTime[iPlayer] = fGameTime + STATUS_TEXT_DELAY
 
-    static szText[STATUS_TEXT_MAXLEN]
-
     new iSprayEnt = trace_to_spray(iPlayer, USABLE_DIST)
-    if (iSprayEnt != NULLENT)
+    if (g_iPlayerShowOwnerSprayEnt[iPlayer] != iSprayEnt)
     {
-        static szPlayerName[32]
-        get_entvar(iSprayEnt, var_netname, szPlayerName, charsmax(szPlayerName))
-        formatex(szText, charsmax(szText), "%L", iPlayer, "SPRAY_STATUS_TEXT", szPlayerName)
-    }
-    else
-        formatex(szText, charsmax(szText), " ")
+        static szText[STATUS_TEXT_MAXLEN]
+        if (iSprayEnt != NULLENT)
+        {
+            static szPlayerName[32]
+            get_entvar(iSprayEnt, var_netname, szPlayerName, charsmax(szPlayerName))
+            formatex(szText, charsmax(szText), "%L", iPlayer, "SPRAY_STATUS_TEXT", szPlayerName)
+        }
+        else
+            copy(szText, charsmax(szText), g_szStatusText[iPlayer])
 
-    if (!equal(szText, g_szStatusText[iPlayer]))
-    {
-        emessage_begin(MSG_ONE, g_msgStatusText, .player=iPlayer)
-        ewrite_byte(0)
-        ewrite_string(szText)
-        emessage_end()
+        message_begin(MSG_ONE, g_msgStatusText, .player=iPlayer)
+        write_byte(0)
+        write_string(szText)
+        message_end()
+
+        g_iPlayerShowOwnerSprayEnt[iPlayer] = iSprayEnt
     }
 }
 
