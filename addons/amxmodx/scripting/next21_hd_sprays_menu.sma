@@ -64,7 +64,7 @@ public show_sprays_menu(iPlayer)
 	if (!is_user_connected(iPlayer))
 		return PLUGIN_HANDLED
 
-	new szMenuItem[32]
+	new szMenuItem[64]
 
 	formatex(szMenuItem, charsmax(szMenuItem), "%L", iPlayer, "SPRAY_MENU_TITLE")
 	menu_setprop(g_iMenu, MPROP_TITLE, szMenuItem)
