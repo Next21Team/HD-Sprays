@@ -113,5 +113,26 @@ native create_spray(const iPlayer, const iSprayId);
 * Removes the spray entity.
 *
 * @param    iSprayEnt      Spray entity index
+*
+* @noreturn
 */
 native remove_spray(const iSprayEnt);
+
+/**
+* Sets the preview spray to the client.
+*
+* @param    iPlayer         Client index
+* @param    iSprayId        Spray index
+*
+* @return                   Spray entity index
+*/
+native set_preview_spray(const iPlayer, const iSprayId);
+
+/**
+* Cleans the preview spray to the client.
+*
+* @param    iPlayer      Client index
+*
+* @noreturn
+*/
+native clear_preview_spray(const iPlayer)

@@ -1,8 +1,10 @@
 [en]
 SPRAY_STATUS_TEXT = Spray by: %s
 SPRAY_MENU_TITLE = \ySprays Menu
+SPRAY_MENU_PREVIEW = \rPreview
 SPRAY_MENU_REMOVE = \rRemove spray
 SPRAY_MENU_RANDOM = \rRandom spray
+SPRAY_PREVIEW_MENU_TITLE = \yPreview (\r%s\y)
 SPRAY_SET_REMOVE = ^1You removed the spray
 SPRAY_SET_RANDOM = ^1You selected to draw a random spray
 SPRAY_SET = ^1You selected ^4%s ^1spray
@@ -11,8 +13,10 @@ SPRAY_ACCESS = You do not have access to this spray
 [ru]
 SPRAY_STATUS_TEXT = Нарисовал: %s
 SPRAY_MENU_TITLE = \yМеню спреев
+SPRAY_MENU_PREVIEW = \rПредпросмотр
 SPRAY_MENU_REMOVE = \rУбрать спрей
 SPRAY_MENU_RANDOM = \rСлучайный спрей
+SPRAY_PREVIEW_MENU_TITLE = \yПредпросмотр (\r%s\y)
 SPRAY_SET_REMOVE = ^1Вы убрали спрей
 SPRAY_SET_RANDOM = ^1Вы выбрали рисование случайного спрея
 SPRAY_SET = ^1Вы выбрали ^4%s

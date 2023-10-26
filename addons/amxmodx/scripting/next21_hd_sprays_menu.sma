@@ -7,7 +7,7 @@ new const VERSION[] =	"Psycrow"
 
 new const CHAT_TAG[] = "^4[HD Sprays]"
 
-new g_iMenu
+new g_iSprayMenu, g_iPreviewMenu
 
 public plugin_init()
 {
@@ -16,6 +16,7 @@ public plugin_init()
 	register_dictionary("common.txt")
 
 	create_sprays_menu()
+	create_preview_menu()
 
 	register_clcmd("say /spray", "show_sprays_menu")
 	register_clcmd("say_team /spray", "show_sprays_menu")
@@ -67,24 +68,56 @@ public show_sprays_menu(iPlayer)
 	new szMenuItem[64]
 
 	formatex(szMenuItem, charsmax(szMenuItem), "%L", iPlayer, "SPRAY_MENU_TITLE")
-	menu_setprop(g_iMenu, MPROP_TITLE, szMenuItem)
+	menu_setprop(g_iSprayMenu, MPROP_TITLE, szMenuItem)
+
+	formatex(szMenuItem, charsmax(szMenuItem), "%L", iPlayer, "SPRAY_MENU_PREVIEW")
+	menu_item_setname(g_iSprayMenu, 0, szMenuItem)
 
 	formatex(szMenuItem, charsmax(szMenuItem), "%L", iPlayer, "SPRAY_MENU_REMOVE")
-	menu_item_setname(g_iMenu, 0, szMenuItem)
+	menu_item_setname(g_iSprayMenu, 1, szMenuItem)
 
 	formatex(szMenuItem, charsmax(szMenuItem), "%L", iPlayer, "SPRAY_MENU_RANDOM")
-	menu_item_setname(g_iMenu, 1, szMenuItem)
+	menu_item_setname(g_iSprayMenu, 2, szMenuItem)
 
 	formatex(szMenuItem, charsmax(szMenuItem), "%L", iPlayer, "BACK")
-	menu_setprop(g_iMenu, MPROP_BACKNAME, szMenuItem)
+	menu_setprop(g_iSprayMenu, MPROP_BACKNAME, szMenuItem)
 
 	formatex(szMenuItem, charsmax(szMenuItem), "%L", iPlayer, "MORE")
-	menu_setprop(g_iMenu, MPROP_NEXTNAME, szMenuItem)
+	menu_setprop(g_iSprayMenu, MPROP_NEXTNAME, szMenuItem)
 
 	formatex(szMenuItem, charsmax(szMenuItem), "%L", iPlayer, "EXIT")
-	menu_setprop(g_iMenu, MPROP_EXITNAME, szMenuItem)
+	menu_setprop(g_iSprayMenu, MPROP_EXITNAME, szMenuItem)
 
-	menu_display(iPlayer, g_iMenu)
+	menu_display(iPlayer, g_iSprayMenu)
+	return PLUGIN_HANDLED
+}
+
+show_preview_menu(iPlayer, iPage=0, iSprayId=0)
+{
+	if (!is_user_connected(iPlayer))
+		return PLUGIN_HANDLED
+
+	if (set_preview_spray(iPlayer, iSprayId) <= 0)
+		return PLUGIN_HANDLED
+
+	new eSprayData[SPRAY_DATA]
+	get_spray_data(iSprayId, eSprayData)
+
+	new szMenuItem[64]
+
+	formatex(szMenuItem, charsmax(szMenuItem), "%L", iPlayer, "SPRAY_PREVIEW_MENU_TITLE", eSprayData[SPRAY_NAME])
+	menu_setprop(g_iPreviewMenu, MPROP_TITLE, szMenuItem)
+
+	formatex(szMenuItem, charsmax(szMenuItem), "%L", iPlayer, "BACK")
+	menu_setprop(g_iPreviewMenu, MPROP_BACKNAME, szMenuItem)
+
+	formatex(szMenuItem, charsmax(szMenuItem), "%L", iPlayer, "MORE")
+	menu_setprop(g_iPreviewMenu, MPROP_NEXTNAME, szMenuItem)
+
+	formatex(szMenuItem, charsmax(szMenuItem), "%L", iPlayer, "EXIT")
+	menu_setprop(g_iPreviewMenu, MPROP_EXITNAME, szMenuItem)
+
+	menu_display(iPlayer, g_iPreviewMenu, iPage)
 	return PLUGIN_HANDLED
 }
 
@@ -92,6 +125,12 @@ public sprays_menu_handler(iPlayer, iMenu, iItem)
 {
 	if (iItem == MENU_EXIT)
 		return PLUGIN_HANDLED
+
+	if (iItem == 0)
+	{
+		show_preview_menu(iPlayer)
+		return PLUGIN_HANDLED
+	}
 
 	new szSprayId[6], szSprayName[SPRAY_NAME_LEN], iAccess
 	menu_item_getinfo(iMenu, iItem, iAccess, szSprayId,
@@ -121,12 +160,35 @@ public sprays_menu_handler(iPlayer, iMenu, iItem)
 	return PLUGIN_HANDLED
 }
 
+public preview_menu_handler(iPlayer, iMenu, iItem)
+{
+	if (iItem == MENU_EXIT)
+	{
+		clear_preview_spray(iPlayer)
+		show_sprays_menu(iPlayer)
+		return PLUGIN_HANDLED
+	}
+
+	new iSprayId, szSprayId[6]
+	menu_item_getinfo(iMenu, iItem, .info=szSprayId, .infolen=charsmax(szSprayId))
+	iSprayId = str_to_num(szSprayId)
+
+	show_preview_menu(iPlayer, iItem / 7, iSprayId)
+	return PLUGIN_HANDLED
+}
+
+public preview_menu_available(iPlayer, iMenu, iItem)
+{
+	return get_spraysnum() > 1 ? ITEM_ENABLED : ITEM_DISABLED
+}
+
 create_sprays_menu()
 {
-	g_iMenu = menu_create("SPRAY_MENU_TITLE", "sprays_menu_handler")
+	g_iSprayMenu = menu_create("SPRAY_MENU_TITLE", "sprays_menu_handler")
 
-	menu_additem(g_iMenu, "SPRAY_MENU_REMOVE", fmt("%d", NULL_SPRAY_ID))
-	menu_additem(g_iMenu, "SPRAY_MENU_RANDOM", fmt("%d", RANDOM_SPRAY_ID))
+	menu_additem(g_iSprayMenu, "SPRAY_MENU_PREVIEW", .callback=menu_makecallback("preview_menu_available"))
+	menu_additem(g_iSprayMenu, "SPRAY_MENU_REMOVE", fmt("%d", NULL_SPRAY_ID))
+	menu_additem(g_iSprayMenu, "SPRAY_MENU_RANDOM", fmt("%d", RANDOM_SPRAY_ID))
 
 	new Array:aSprays
 	new iSpraysNum = get_sprays(aSprays)
@@ -136,6 +198,20 @@ create_sprays_menu()
 		ArrayGetArray(aSprays, i, eSprayData)
 
 		// You can use other spray options to format the menu item
-		menu_additem(g_iMenu, eSprayData[SPRAY_NAME], fmt("%d", i), eSprayData[SPRAY_ACCESS])
+		menu_additem(g_iSprayMenu, eSprayData[SPRAY_NAME], fmt("%d", i), eSprayData[SPRAY_ACCESS])
+	}
+}
+
+create_preview_menu()
+{
+	g_iPreviewMenu = menu_create("SPRAY_PREVIEW_MENU_TITLE", "preview_menu_handler")
+
+	new Array:aSprays
+	new iSpraysNum = get_sprays(aSprays)
+
+	for (new i, eSprayData[SPRAY_DATA]; i < iSpraysNum; i++)
+	{
+		ArrayGetArray(aSprays, i, eSprayData)
+		menu_additem(g_iPreviewMenu, eSprayData[SPRAY_NAME], fmt("%d", i))
 	}
 }

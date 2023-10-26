@@ -8,7 +8,7 @@
 #include <hdsprays_const>
 
 new const PLUGIN[] =	"HD Sprays"
-new const AUTHOR[] =	"1.3"
+new const AUTHOR[] =	"1.4"
 new const VERSION[] =	"Polarhigh & Psycrow"
 
 #define play_spray_sound(%1)		emit_sound(%1, CHAN_AUTO, "player/sprayer.wav", 1.0, ATTN_NORM, 0, PITCH_NORM)
@@ -27,6 +27,7 @@ new const NVAULT_DB[] = "next21_spray"
 new const CLASSNAME_BASE[] = "info_target"
 
 new const CLASSNAME_SPRAY[] = "next21_spray"
+new const CLASSNAME_PREVIEW_SPRAY[] = "next21_preview_spray"
 
 #define WALL_CHECKER_DEBUG_LEVEL 	0
 
@@ -73,6 +74,7 @@ new
     g_iPlayerSpray[MAX_PLAYERS + 1],
     g_szStatusText[MAX_PLAYERS + 1][STATUS_TEXT_MAXLEN],
     g_iPlayerShowOwnerSprayEnt[MAX_PLAYERS + 1],
+    g_iPlayerPreviewSprayEnt[MAX_PLAYERS + 1],
     g_pCvars[CVAR_LIST],
     g_msgStatusText,
     g_fwdSetUserSpray, g_fwdGetRandomSpray,
@@ -107,6 +109,9 @@ public plugin_natives()
 
     register_native("create_spray", "native_create_spray")
     register_native("remove_spray", "native_remove_spray")
+
+    register_native("set_preview_spray", "native_set_preview_spray")
+    register_native("clear_preview_spray", "native_clear_preview_spray")
 }
 
 public plugin_precache()
@@ -150,6 +155,7 @@ public plugin_init()
 
     g_msgStatusText = get_user_msgid("StatusText")
 
+    RegisterHookChain(RG_CBasePlayer_PreThink, "CBasePlayer_PreThink_Post", true);
     RegisterHookChain(RG_CBasePlayer_ImpulseCommands, "CBasePlayer_ImpulseCommands_Pre", false)
     RegisterHookChain(RG_CSGameRules_CleanUpMap, "CSGameRules_CleanUpMap_Post", true)
 
@@ -191,6 +197,7 @@ public client_authorized(iPlayer)
 {
     g_iPlayerSpray[iPlayer] = NULL_SPRAY_ID
     g_iPlayerShowOwnerSprayEnt[iPlayer] = NULLENT
+    g_iPlayerPreviewSprayEnt[iPlayer] = NULLENT
 
     new szKey[24], szValue[SPRAY_NAME_LEN], iTimestamp
     get_user_authid(iPlayer, szKey, charsmax(szKey))
@@ -201,6 +208,37 @@ public client_authorized(iPlayer)
         TrieGetCell(g_trieSprayMap, szValue, iSprayId)
         set_player_spray(iPlayer, iSprayId, false)
     }
+}
+
+public client_disconnected(iPlayer)
+{
+    clear_preview_spray(iPlayer)
+}
+
+public CBasePlayer_PreThink_Post(iPlayer)
+{
+    new iPreviewSprayEnt = g_iPlayerPreviewSprayEnt[iPlayer]
+
+    if (is_nullent(iPreviewSprayEnt))
+        return HC_CONTINUE
+
+    new Float:vOrigin[3], Float:vAngles[3]
+    get_entvar(iPlayer, var_origin, vOrigin)
+    get_entvar(iPlayer, var_angles, vAngles)
+
+    if (engfunc(EngFunc_PointContents, vOrigin) == CONTENTS_EMPTY)
+    {
+        vOrigin[0] += floatcos(vAngles[1], degrees) * 100.0
+        vOrigin[1] += floatsin(vAngles[1], degrees) * 100.0
+        vOrigin[2] += 15.0
+
+        vAngles[1] += 180.0
+
+        set_entvar(iPreviewSprayEnt, var_origin, vOrigin)
+        set_entvar(iPreviewSprayEnt, var_angles, vAngles)
+    }
+
+    return HC_CONTINUE
 }
 
 public CBasePlayer_ImpulseCommands_Pre(iPlayer)
@@ -326,73 +364,34 @@ create_spray(iPlayer, iSprayId)
             vAngles[1] = vPlayerAngles[1] - 180.0
     }
 
-    if (g_iSpraysNow >= g_pCvars[CVAR_MAX_SPRAYS])
-    {
-        new iOldestSprayEnt = find_oldest_spray()
-        if (iOldestSprayEnt != NULLENT)
-            erase_spray(iOldestSprayEnt)
-    }
+    new iSprayEnt = spawn_spray_ent(eSprayData)
+    if (is_nullent(iSprayEnt))
+        return NULLENT
 
-    new Float:fGameTime = get_gametime()
-    set_member(iPlayer, m_flNextDecalTime, fGameTime + g_pCvars[CVAR_SPRAY_DELAY])
-    play_spray_sound(iPlayer)
-
-    new iSprayEnt = rg_create_entity(CLASSNAME_BASE, true)
-    set_entvar(iSprayEnt, var_classname, CLASSNAME_SPRAY)
-
-    static szModelPath[256]
-    formatex(szModelPath, charsmax(szModelPath), "%s/%s", SPRAYS_PATH, eSprayData[SPRAY_MODEL])
-    engfunc(EngFunc_SetModel, iSprayEnt, szModelPath)
     engfunc(EngFunc_SetSize, iSprayEnt, vMins, vMaxs)
-
-    set_entvar(iSprayEnt, var_solid, SOLID_NOT)
-    set_entvar(iSprayEnt, var_movetype, MOVETYPE_FLY)
-    set_entvar(iSprayEnt, var_rendermode, kRenderNormal)
     set_entvar(iSprayEnt, var_origin, vOrigin)
     set_entvar(iSprayEnt, var_angles, vAngles)
     set_entvar(iSprayEnt, var_owner, iPlayer)
+    set_entvar(iSprayEnt, var_classname, CLASSNAME_SPRAY)
     set_entvar(iSprayEnt, var_netname, fmt("%n", iPlayer))
-    set_entvar(iSprayEnt, var_scale, eSprayData[SPRAY_SCALE])
-    set_entvar(iSprayEnt, var_frame, 0)
-    set_entvar(iSprayEnt, var_framerate, eSprayData[SPRAY_FRAMERATE])
-    set_entvar(iSprayEnt, var_animtime, fGameTime)
-    set_entvar(iSprayEnt, var_spawntime, fGameTime)
     set_entvar(iSprayEnt, var_sprayid, iSprayId)
+
+    if (g_pCvars[CVAR_LIGHT])
+        set_entvar(iSprayEnt, var_effects, EF_DIMLIGHT)
+
+    if (g_iSpraysNow >= g_pCvars[CVAR_MAX_SPRAYS])
+    {
+        new iOldestSprayEnt = find_oldest_spray()
+        if (iOldestSprayEnt != NULLENT && iOldestSprayEnt != iSprayEnt)
+            erase_spray(iOldestSprayEnt)
+    }
 
     new Float:fLifeTime = g_pCvars[CVAR_SPRAY_LIFETIME]
     if (fLifeTime > 0.0)
         set_task(fLifeTime, "erase_spray", iSprayEnt)
 
-    if (g_pCvars[CVAR_LIGHT])
-        set_entvar(iSprayEnt, var_effects, EF_DIMLIGHT)
-
-    switch (eSprayData[SPRAY_TYPE])
-    {
-        case SPRAY_TYPE_STATIC:
-        {
-            if (eSprayData[SPRAY_FORMAT] == SPRAY_FMT_MDL)
-            {
-                set_entvar(iSprayEnt, var_body, eSprayData[SPRAY_BODY])
-                set_entvar(iSprayEnt, var_skin, eSprayData[SPRAY_SKIN])
-            }
-            else
-            {
-                set_entvar(iSprayEnt, var_frame, eSprayData[SPRAY_BODY] + 0.0)
-            }
-        }
-        case SPRAY_TYPE_ANIMATE:
-        {
-            set_entvar(iSprayEnt, var_body, 0)
-            set_entvar(iSprayEnt, var_skin, 0)
-            set_entvar(iSprayEnt, var_frame, 0.0)
-            set_entvar(iSprayEnt, var_nextthink, fGameTime + (1.0 / eSprayData[SPRAY_FRAMERATE]))
-
-            new aParams[THINK_PARAMS]
-            aParams[TP_FORMAT] = eSprayData[SPRAY_FORMAT]
-            aParams[TP_FRAMES_NUM] = eSprayData[SPRAY_FRAMES_NUM]
-            SetThink(iSprayEnt, "spray_think", aParams, THINK_PARAMS)
-        }
-    }
+    set_member(iPlayer, m_flNextDecalTime, get_gametime() + g_pCvars[CVAR_SPRAY_DELAY])
+    play_spray_sound(iPlayer)
 
     g_iSpraysNow++
     ExecuteForward(g_fwdCreateSprayPost, iForwardReturn, iPlayer, iSprayEnt)
@@ -426,6 +425,58 @@ public spray_think(iSprayEnt, aParams[THINK_PARAMS])
     }
 
     set_entvar(iSprayEnt, var_nextthink, get_gametime() + (1.0 / fFrameRate))
+}
+
+spawn_spray_ent(eSprayData[SPRAY_DATA])
+{
+    new iSprayEnt = rg_create_entity(CLASSNAME_BASE, true)
+    if (is_nullent(iSprayEnt))
+        return NULLENT
+
+    static szModelPath[256]
+    formatex(szModelPath, charsmax(szModelPath), "%s/%s", SPRAYS_PATH, eSprayData[SPRAY_MODEL])
+    engfunc(EngFunc_SetModel, iSprayEnt, szModelPath)
+
+    new Float:fGameTime = get_gametime()
+
+    set_entvar(iSprayEnt, var_solid, SOLID_NOT)
+    set_entvar(iSprayEnt, var_movetype, MOVETYPE_FLY)
+    set_entvar(iSprayEnt, var_rendermode, kRenderNormal)
+    set_entvar(iSprayEnt, var_scale, eSprayData[SPRAY_SCALE])
+    set_entvar(iSprayEnt, var_frame, 0)
+    set_entvar(iSprayEnt, var_framerate, eSprayData[SPRAY_FRAMERATE])
+    set_entvar(iSprayEnt, var_animtime, fGameTime)
+    set_entvar(iSprayEnt, var_spawntime, fGameTime)
+
+    switch (eSprayData[SPRAY_TYPE])
+    {
+        case SPRAY_TYPE_STATIC:
+        {
+            if (eSprayData[SPRAY_FORMAT] == SPRAY_FMT_MDL)
+            {
+                set_entvar(iSprayEnt, var_body, eSprayData[SPRAY_BODY])
+                set_entvar(iSprayEnt, var_skin, eSprayData[SPRAY_SKIN])
+            }
+            else
+            {
+                set_entvar(iSprayEnt, var_frame, eSprayData[SPRAY_BODY] + 0.0)
+            }
+        }
+        case SPRAY_TYPE_ANIMATE:
+        {
+            set_entvar(iSprayEnt, var_body, 0)
+            set_entvar(iSprayEnt, var_skin, 0)
+            set_entvar(iSprayEnt, var_frame, 0.0)
+            set_entvar(iSprayEnt, var_nextthink, fGameTime + (1.0 / eSprayData[SPRAY_FRAMERATE]))
+
+            new aParams[THINK_PARAMS]
+            aParams[TP_FORMAT] = eSprayData[SPRAY_FORMAT]
+            aParams[TP_FRAMES_NUM] = eSprayData[SPRAY_FRAMES_NUM]
+            SetThink(iSprayEnt, "spray_think", aParams, THINK_PARAMS)
+        }
+    }
+
+    return iSprayEnt
 }
 
 find_oldest_spray()
@@ -478,6 +529,54 @@ set_player_spray(iPlayer, iSprayId, bool:bSave)
     }
 
     return iSprayId
+}
+
+create_preview_spray(iPlayer, iSprayId)
+{
+    if (!is_user_connected(iPlayer))
+        return NULLENT
+
+    if (!is_valid_spray(iSprayId))
+        return NULLENT
+
+    new eSprayData[SPRAY_DATA]
+    ArrayGetArray(g_aSprays, iSprayId, eSprayData)
+
+    new iPreviewSprayEnt = spawn_spray_ent(eSprayData)
+    if (is_nullent(iPreviewSprayEnt))
+        return NULLENT
+
+    new iEffects = EF_OWNER_VISIBILITY | EF_FORCEVISIBILITY
+    if (g_pCvars[CVAR_LIGHT])
+        iEffects |= EF_DIMLIGHT
+
+    set_entvar(iPreviewSprayEnt, var_movetype, MOVETYPE_NOCLIP)
+    set_entvar(iPreviewSprayEnt, var_owner, iPlayer)
+    set_entvar(iPreviewSprayEnt, var_classname, CLASSNAME_PREVIEW_SPRAY)
+    set_entvar(iPreviewSprayEnt, var_effects, iEffects)
+
+    return iPreviewSprayEnt
+}
+
+set_preview_spray(iPlayer, iSprayId)
+{
+    new iPreviewSprayEnt = create_preview_spray(iPlayer, iSprayId)
+    if (!is_nullent(iPreviewSprayEnt))
+    {
+        clear_preview_spray(iPlayer)
+        g_iPlayerPreviewSprayEnt[iPlayer] = iPreviewSprayEnt
+    }
+    return iPreviewSprayEnt
+}
+
+clear_preview_spray(iPlayer)
+{
+    new iPreviewSprayEnt = g_iPlayerPreviewSprayEnt[iPlayer]
+    if (!is_nullent(iPreviewSprayEnt))
+    {
+        set_entvar(iPreviewSprayEnt, var_flags, FL_KILLME)
+        g_iPlayerPreviewSprayEnt[iPlayer] = NULLENT
+    }
 }
 
 get_random_player_spray(iPlayer)
@@ -984,4 +1083,14 @@ public native_create_spray(plugin_id, argc)
 public native_remove_spray(plugin_id, argc)
 {
     erase_spray(get_param(1))
+}
+
+public native_set_preview_spray(plugin_id, argc)
+{
+    return set_preview_spray(get_param(1), get_param(2))
+}
+
+public native_clear_preview_spray(plugin_id, argc)
+{
+    clear_preview_spray(get_param(1))
 }
