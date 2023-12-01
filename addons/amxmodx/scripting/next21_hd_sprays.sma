@@ -445,7 +445,7 @@ spawn_spray_ent(eSprayData[SPRAY_DATA])
     set_entvar(iSprayEnt, var_scale, eSprayData[SPRAY_SCALE])
     set_entvar(iSprayEnt, var_frame, 0)
     set_entvar(iSprayEnt, var_framerate, eSprayData[SPRAY_FRAMERATE])
-    set_entvar(iSprayEnt, var_animtime, fGameTime)
+    set_entvar(iSprayEnt, var_animtime, 0.0)
     set_entvar(iSprayEnt, var_spawntime, fGameTime)
 
     switch (eSprayData[SPRAY_TYPE])
