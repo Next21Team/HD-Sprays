@@ -1,0 +1,29 @@
+{
+    "spray_pack": {
+        "path": "src/spray_pack",
+        "bodies": [
+            {
+                "name": "spray 1",
+                "path": "spray1.bmp",
+                "cost": 100
+            },
+            {
+                "name": "spray 2",
+                "path": "spray2.png",
+                "cost": 150
+            }
+        ]
+    },
+    "animated_spray": {
+        "name": "animated_spray",
+        "path": "src/animated_spray",
+        "framerate": 10.0,
+        "cost": 300
+    },
+    "animated_spray2": {
+        "name": "animated_spray2",
+        "path": "src/animated_spray2.gif",
+        "framerate": 10.0,
+        "cost": 300
+    }
+}

@@ -43,7 +43,7 @@ class Config:
 class Spray:
     name:       str
     model:      str
-    price:      int
+    cost:       int
     image_path: str
     spray_type: str = "n"
     body:       int = 0
@@ -65,26 +65,26 @@ class Spray:
             self.width,
             self.height,
             self.scale,
-            self.price,
+            self.cost,
             self.access
         ))
 
 
-def parse_directory_frame_spray(model_name, dir_path, frame, body) -> Spray:
-    name  = frame.get("name")
-    path  = frame.get("path")
-    price = frame.get("price")
+def parse_spraypack_body(model_name, dir_path, body, body_num) -> Spray:
+    name = body.get("name")
+    path = body.get("path")
+    cost = body.get("cost")
 
     if name is None or type(name) is not str:
-        warn("Missing name for %s frame" % model_name)
+        warn("Missing name for %s body" % model_name)
         return
 
     if path is None or type(path) is not str:
         warn("Missing path for %s | %s" % (model_name, name))
         return
 
-    if price is None or type(price) is not int:
-        warn("Missing price for %s | %s" % (model_name, name))
+    if cost is None or type(cost) is not int:
+        warn("Missing cost for %s | %s" % (model_name, name))
         return
 
     path = os.path.join(dir_path, path)
@@ -95,41 +95,41 @@ def parse_directory_frame_spray(model_name, dir_path, frame, body) -> Spray:
     return Spray(
             name=name,
             model=model_name + ".mdl",
-            body=body,
-            price=price,
+            body=body_num,
+            cost=cost,
             image_path=path,
-            )
+        )
 
 
-def parse_directory_sprays(model_name, path, frames):
+def parse_spraypack(model_name, path, bodies) -> list:
     sprays = []
 
     if path is None or type(path) is not str:
         warn("Missing path for %s" % model_name)
         return sprays
 
-    if frames is None or type(frames) is not list:
-        warn("Missing frames for %s" % model_name)
+    if type(bodies) is not list:
+        warn("Missing bodies for %s" % model_name)
         return sprays
 
     if not os.path.isdir(path):
         warn("Invalid path for %s" % model_name)
         return sprays
 
-    body = 0
-    for frame in frames:
-        spray = parse_directory_frame_spray(model_name, path, frame, body)
+    b = 0
+    for body in bodies:
+        spray = parse_spraypack_body(model_name, path, body, b)
         if spray:
             sprays.append(spray)
-            body += 1
+            b += 1
 
     return sprays
 
 
 def parse_spray(model_name, data) -> Spray:
-    name = data.get("name")
-    path = data.get("path")
-    price = data.get("price")
+    name      = data.get("name")
+    path      = data.get("path")
+    cost      = data.get("cost")
     framerate = data.get("framerate")
 
     if name is None or type(name) is not str:
@@ -140,20 +140,13 @@ def parse_spray(model_name, data) -> Spray:
         warn("Missing path for %s" % model_name)
         return
 
-    if price is None or type(price) is not int:
-        warn("Missing price for %s" % model_name)
+    if cost is None or type(cost) is not int:
+        warn("Missing cost for %s" % model_name)
         return
 
-    if data["type"] == "a":
-        if not os.path.isdir(path):
-            warn("Invalid path for %s" % model_name)
-            return
-        spray_type = "a"
-    else:
-        if not os.path.isfile(path):
-            warn("Invalid path for %s" % model_name)
-            return
-        spray_type = "n"
+    if not os.path.isfile(path) and not os.path.isdir(path):
+        warn("Invalid path for %s" % model_name)
+        return
 
     if framerate is None or type(framerate) not in (int, float):
         framerate = 1.0
@@ -162,9 +155,8 @@ def parse_spray(model_name, data) -> Spray:
             name=name,
             model=model_name + ".mdl",
             framerate=framerate,
-            price=price,
+            cost=cost,
             image_path=path,
-            spray_type=spray_type
         )
 
 
@@ -177,20 +169,14 @@ def parse_sprays_list(list_path):
     for model_name, data in sprays_list.items():
         sprays = None
 
-        spray_type = data.get("type")
-        if spray_type is None or type(spray_type) is not str:
-            warn("Missing type for %s" % model_name)
-            continue
-
-        if spray_type == "d":
-            sprays = parse_directory_sprays(
-                model_name, data.get("path"), data.get("frames"))
-        elif spray_type in ("a", "n"):
+        bodies = data.get("bodies")
+        if bodies:
+            path = data.get("path")
+            sprays = parse_spraypack(model_name, path, bodies)
+        else:
             spray = parse_spray(model_name, data)
             if spray:
                 sprays = [spray]
-        else:
-            warn("Invalid type for %s" % model_name)
 
         if sprays:
             spray_packs.append(sprays)
@@ -200,10 +186,9 @@ def parse_sprays_list(list_path):
 
 def make_sprays(spray_packs, output_dir_path, cfg: Config):
     for sprays in spray_packs:
-        first_spray = sprays[0]
-        mdl_maker = MdlMaker(first_spray.model)
+        mdl_maker = MdlMaker(sprays[0].model)
 
-        if first_spray.spray_type == "n" and len(sprays) > 1:
+        if len(sprays) > 1:
             for spray in sprays:
                 img = mdl_maker.add_image(spray.image_path,
                                     cfg.max_width,
@@ -213,35 +198,35 @@ def make_sprays(spray_packs, output_dir_path, cfg: Config):
 
                 spray.width = img.width * cfg.scale
                 spray.height = img.width * cfg.scale
-
-        elif first_spray.spray_type == "a" and os.path.isdir(first_spray.image_path):
-            spray = first_spray
-
-            images = sorted(filter(lambda x: os.path.isfile(os.path.join(spray.image_path, x)),
-                                   os.listdir(spray.image_path)))
-
-            for i in images:
-                image_path = os.path.join(spray.image_path, i)
-                img = mdl_maker.add_image(image_path,
-                                    cfg.max_width,
-                                    cfg.max_height,
-                                    cfg.transparent_sensitivity,
-                                    1)[0]
-
-                spray.width = max(spray.width, img.width * cfg.scale)
-                spray.height = max(spray.height, img.width * cfg.scale)
-
+                spray.spray_type = "n"
         else:
-            spray = first_spray
-            imgs = mdl_maker.add_image(spray.image_path,
-                                      cfg.max_width,
-                                      cfg.max_height,
-                                      cfg.transparent_sensitivity,
-                                      cfg.gif_max_frames)
+            spray = sprays[0]
+            if os.path.isdir(spray.image_path):
+                images = sorted(filter(lambda x: os.path.isfile(os.path.join(spray.image_path, x)),
+                                       os.listdir(spray.image_path)))
 
-            spray.width = max(img.width * cfg.scale for img in imgs)
-            spray.height = img.width * cfg.scale
-            spray.spray_type = "a" if len(imgs) > 1 else "n"
+                for i in images:
+                    image_path = os.path.join(spray.image_path, i)
+                    img = mdl_maker.add_image(image_path,
+                                        cfg.max_width,
+                                        cfg.max_height,
+                                        cfg.transparent_sensitivity,
+                                        1)[0]
+
+                    spray.width = max(spray.width, img.width * cfg.scale)
+                    spray.height = max(spray.height, img.width * cfg.scale)
+                    spray.spray_type = "a"
+
+            else:
+                imgs = mdl_maker.add_image(spray.image_path,
+                                          cfg.max_width,
+                                          cfg.max_height,
+                                          cfg.transparent_sensitivity,
+                                          cfg.gif_max_frames)
+
+                spray.width = max(img.width * cfg.scale for img in imgs)
+                spray.height = img.width * cfg.scale
+                spray.spray_type = "a" if len(imgs) > 1 else "n"
 
         mdl_path = os.path.join(output_dir_path, mdl_maker.name)
 
@@ -277,8 +262,8 @@ def main():
 
     spray_packs = parse_sprays_list(args.input)
 
-    print("Detected %d spray models. Type <yes> to continue" % len(spray_packs))
-    if input() != "yes":
+    print("Detected %d spray models. Type <y> to continue" % len(spray_packs))
+    if input() != "y":
         sys.exit(0)
 
     if not os.path.isdir(args.output):
