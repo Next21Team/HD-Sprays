@@ -32,7 +32,7 @@ _[English](README.md) | **Русский**_
 				"name": "spray name",
 				"path": "file",
 				"cost": 100
-            }
+            		}
 		]
 	}
 }
