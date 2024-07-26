@@ -32,7 +32,7 @@ The file with the list of sprays corresponds to the following template:
 				"name": "spray name",
 				"path": "file",
 				"cost": 100
-            }
+			}
 		]
 	}
 }
