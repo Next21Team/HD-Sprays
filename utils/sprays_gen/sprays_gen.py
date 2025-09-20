@@ -38,6 +38,12 @@ class Config:
         self.scale = parser.getfloat(preset, "scale", fallback=0.087890625)
         self.gif_max_frames = parser.getint(preset, "gif_max_frames", fallback=40)
 
+        if self.max_width > 512:
+            warn("The max_width value exceeds 512")
+
+        if self.max_height > 512:
+            warn("The max_height value exceeds 512")
+
 
 @dataclass
 class Spray:
