@@ -26,6 +26,7 @@ Adds functionality for players to draw high resolution sprays using models and s
 | hd_spray_intersects | 1        | Restricts draw sprays on over the other sprays. |
 | hd_spray_show_owner | 1        | Enable display of player's nickname when aiming at a spray. |
 | hd_spray_round_cleanup | 0     | Enable removal of all drawn sprays at the start of a round. |
+| hd_spray_print_delay | 0     | Print the time until a new spray can be drawn. (0 - don't print, 1 - print in the center, 2 - print in the chat) |
 
 ### Spray configuration:
 The configuration file is *addons/amxmodx/configs/sprays.ini*. Example configuration:

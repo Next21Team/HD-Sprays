@@ -49,6 +49,13 @@ new const BLOCKED_SURFACE_CLSSNAMES[][] = {
     "func_breakable"
 }
 
+enum PrintDelayType
+{
+    PDT_NONE,
+    PDT_CENTER,
+    PDT_CHAT
+}
+
 enum _:CVAR_LIST
 {
     bool:CVAR_LIGHT,
@@ -59,7 +66,8 @@ enum _:CVAR_LIST
     bool:CVAR_MOVABLE_SURFACE,
     bool:CVAR_INTERSECTS,
     bool:CVAR_SHOW_OWNER,
-    bool:CVAR_ROUND_CLEANUP
+    bool:CVAR_ROUND_CLEANUP,
+    CVAR_PRINT_DELAY
 }
 
 enum _:THINK_PARAMS
@@ -170,6 +178,7 @@ public plugin_init()
     bind_pcvar_num(register_cvar("hd_spray_intersects", "1"), g_pCvars[CVAR_INTERSECTS])
     bind_pcvar_num(register_cvar("hd_spray_show_owner", "1"), g_pCvars[CVAR_SHOW_OWNER])
     bind_pcvar_num(register_cvar("hd_spray_round_cleanup", "0"), g_pCvars[CVAR_ROUND_CLEANUP])
+    bind_pcvar_num(register_cvar("hd_spray_print_delay", "0"), g_pCvars[CVAR_PRINT_DELAY])
 
     g_trieBlockedSurfClassNames = TrieCreate()
     for (new i; i < sizeof BLOCKED_SURFACE_CLSSNAMES; i++)
@@ -257,9 +266,27 @@ public CBasePlayer_ImpulseCommands_Pre(iPlayer)
         goto skip
 
     fPressTimeout[iPlayer] = get_gametime() + PRESS_DELAY
+    new Float:fSprayDelay = Float:get_member(iPlayer, m_flNextDecalTime) - fGameTime
 
-    if (get_member(iPlayer, m_flNextDecalTime) > fGameTime)
+    if (fSprayDelay > 0.0)
+    {
+        new PrintDelayType:iPrintDelay = PrintDelayType:g_pCvars[CVAR_PRINT_DELAY]
+        switch (iPrintDelay)
+        {
+            case PDT_CENTER:
+            {
+                client_print(iPlayer, print_center, "%L",
+                    iPlayer, "SPRAY_DELAY", floatround(fSprayDelay, floatround_ceil))
+            }
+            case PDT_CHAT:
+            {
+                client_print_color(iPlayer, print_team_default, "^4[%s] ^1%L",
+                    PLUGIN, iPlayer, "SPRAY_DELAY", floatround(fSprayDelay, floatround_ceil))
+            }
+        }
+
         goto skip
+    }
 
     new iSprayId = g_iPlayerSpray[iPlayer]
     if (iSprayId == RANDOM_SPRAY_ID)

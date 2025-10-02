@@ -9,6 +9,7 @@ SPRAY_SET_REMOVE = ^1You removed the spray
 SPRAY_SET_RANDOM = ^1You selected to draw a random spray
 SPRAY_SET = ^1You selected ^4%s ^1spray
 SPRAY_ACCESS = You do not have access to this spray
+SPRAY_DELAY = Wait %d sec before spraying
 
 [ru]
 SPRAY_STATUS_TEXT = Нарисовал: %s
@@ -21,3 +22,4 @@ SPRAY_SET_REMOVE = ^1Вы убрали спрей
 SPRAY_SET_RANDOM = ^1Вы выбрали рисование случайного спрея
 SPRAY_SET = ^1Вы выбрали ^4%s
 SPRAY_ACCESS = У вас нет доступа к этому спрею
+SPRAY_DELAY = Подождите %d сек. перед рисованием спрея
