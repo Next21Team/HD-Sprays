@@ -1,25 +1,45 @@
 [en]
 SPRAY_STATUS_TEXT = Spray by: %s
 SPRAY_MENU_TITLE = \ySprays Menu
+SPRAY_PT_MENU_TITLE = \ySprays Menu \r[%i pt.]
 SPRAY_MENU_PREVIEW = \rPreview
 SPRAY_MENU_REMOVE = \rRemove spray
 SPRAY_MENU_RANDOM = \rRandom spray
 SPRAY_PREVIEW_MENU_TITLE = \yPreview (\r%s\y)
+SPRAY_BUY_MENU_TITLE = \yBuy \r%s \yfor \r%d \ypt.?
+SPRAY_CHOOSE_MENU_TITLE = \yChoose or sell \r%s?
+SPRAY_SELL_MENU_TITLE = \ySell \r%s \yfor \r%i \ypt.?
+SPRAY_MENU_CHOOSE = Choose
+SPRAY_MENU_SELL = Sell
 SPRAY_SET_REMOVE = ^1You removed the spray
 SPRAY_SET_RANDOM = ^1You selected to draw a random spray
 SPRAY_SET = ^1You selected ^4%s ^1spray
+SPRAY_BOUGHT = ^1You bought ^4%s ^1spray!
+SPRAY_SOLD = ^1You sold ^4%s ^1spray
 SPRAY_ACCESS = You do not have access to this spray
 SPRAY_DELAY = Wait %d sec before spraying
+SPRAY_NO_SPRAYS = ^1You don't have any spray
+SPRAY_NOT_ENOUGH_PT = ^1You need ^4%d ^1more pt.
 
 [ru]
 SPRAY_STATUS_TEXT = Нарисовал: %s
 SPRAY_MENU_TITLE = \yМеню спреев
+SPRAY_PT_MENU_TITLE = \yМеню спреев \r[%i пт.]
 SPRAY_MENU_PREVIEW = \rПредпросмотр
 SPRAY_MENU_REMOVE = \rУбрать спрей
 SPRAY_MENU_RANDOM = \rСлучайный спрей
 SPRAY_PREVIEW_MENU_TITLE = \yПредпросмотр (\r%s\y)
+SPRAY_BUY_MENU_TITLE = \yКупить \r%s \yза \r%d \yпт.?
+SPRAY_CHOOSE_MENU_TITLE = \yВыбрать или продать \r%s?
+SPRAY_SELL_MENU_TITLE = \yПродать \r%s \yза \r%i \yпт.?
+SPRAY_MENU_CHOOSE = Выбрать
+SPRAY_MENU_SELL = Продать
 SPRAY_SET_REMOVE = ^1Вы убрали спрей
 SPRAY_SET_RANDOM = ^1Вы выбрали рисование случайного спрея
 SPRAY_SET = ^1Вы выбрали ^4%s
+SPRAY_BOUGHT = ^1Вы купили ^4%s ^1спрей!
+SPRAY_SOLD = ^1Вы продали ^4%s ^1спрей
 SPRAY_ACCESS = У вас нет доступа к этому спрею
 SPRAY_DELAY = Подождите %d сек. перед рисованием спрея
+SPRAY_NO_SPRAYS = ^1У вас нет ни одного спрея
+SPRAY_NOT_ENOUGH_PT = ^1Вам нужно еще ^4%d ^1пт.
