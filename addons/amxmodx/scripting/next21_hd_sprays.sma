@@ -11,6 +11,8 @@ new const PLUGIN[] =	"HD Sprays"
 new const AUTHOR[] =	"1.4"
 new const VERSION[] =	"Polarhigh & Psycrow"
 
+new const CHAT_TAG[] = "^4[HD Sprays] ^1"
+
 #define play_spray_sound(%1)		emit_sound(%1, CHAN_AUTO, "player/sprayer.wav", 1.0, ATTN_NORM, 0, PITCH_NORM)
 #define is_valid_spray(%1)			(0<=%1<g_iTotalSprays)
 
@@ -110,6 +112,7 @@ public plugin_natives()
     register_native("get_spraysnum", "native_get_spraysnum")
 
     register_native("get_spray_data", "native_get_spray_data")
+    register_native("find_spray_by_name", "native_find_spray_by_name")
     register_native("is_valid_spray", "native_is_valid_spray")
 
     register_native("get_user_spray", "native_get_user_spray")
@@ -280,8 +283,8 @@ public CBasePlayer_ImpulseCommands_Pre(iPlayer)
             }
             case PDT_CHAT:
             {
-                client_print_color(iPlayer, print_team_default, "^4[%s] ^1%L",
-                    PLUGIN, iPlayer, "SPRAY_DELAY", floatround(fSprayDelay, floatround_ceil))
+                client_print_color(iPlayer, print_team_default, "%s%L",
+                    CHAT_TAG, iPlayer, "SPRAY_DELAY", floatround(fSprayDelay, floatround_ceil))
             }
         }
 
@@ -749,6 +752,12 @@ bool:load_sprays(const szSpraysFile[])
             continue
         }
 
+        if (TrieKeyExists(g_trieSprayMap, szSprayName))
+        {
+            server_print("[%s] A spray named '%s' already exists", PLUGIN, szSprayName)
+            continue
+        }
+
         copy(eSprayData[SPRAY_NAME], SPRAY_NAME_LEN - 1, szSprayName)
         copy(eSprayData[SPRAY_MODEL], SPRAY_NAME_LEN - 1, szSprayModel)
 
@@ -1064,6 +1073,18 @@ public native_get_spray_data(plugin_id, argc)
     set_array(2, eSprayData, SPRAY_DATA)
 
     return true
+}
+
+public native_find_spray_by_name(plugin_id, argc)
+{
+    static szSprayName[SPRAY_NAME_LEN]
+    get_string(1, szSprayName, charsmax(szSprayName))
+
+    new iSprayId
+    if (TrieGetCell(g_trieSprayMap, szSprayName, iSprayId))
+        return iSprayId
+
+    return NULL_SPRAY_ID
 }
 
 public bool:native_is_valid_spray(plugin_id, argc)

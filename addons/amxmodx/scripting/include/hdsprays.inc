@@ -100,6 +100,15 @@ native get_user_spray(const iPlayer);
 native set_user_spray(const iPlayer, const iSprayId, bool:bSave=true);
 
 /**
+* Find the spray index by name.
+*
+* @param    szSpayName      Spray name
+*
+* @return                   Spray id or NULL_SPRAY_ID if not found
+*/
+native find_spray_by_name(const szSpayName[]);
+
+/**
 * Creates a spray in front of the player.
 *
 * @param    iPlayer         Client index
