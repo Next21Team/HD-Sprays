@@ -382,7 +382,7 @@ enum
 new Handle:g_hSQLTuple, g_szQuery[512]
 
 new const SQL_REQ_CREATE_TABLE[] =
-"CREATE TABLE sprays ( \
+"CREATE TABLE IF NOT EXISTS sprays ( \
     steamid TEXT, \
     name TEXT, \
     PRIMARY KEY (steamid, name) \
