@@ -77,9 +77,10 @@ class Spray:
 
 
 def parse_spraypack_body(model_name, dir_path, body, body_num) -> Spray:
-    name = body.get("name")
-    path = body.get("path")
-    cost = body.get("cost")
+    name   = body.get("name")
+    path   = body.get("path")
+    cost   = body.get("cost")
+    access = body.get("access", "")
 
     if name is None or type(name) is not str:
         warn("Missing name for %s body" % model_name)
@@ -104,6 +105,7 @@ def parse_spraypack_body(model_name, dir_path, body, body_num) -> Spray:
             body=body_num,
             cost=cost,
             image_path=path,
+            access=access,
         )
 
 
@@ -137,6 +139,7 @@ def parse_spray(model_name, data) -> Spray:
     path      = data.get("path")
     cost      = data.get("cost")
     framerate = data.get("framerate")
+    access    = data.get("access", "")
 
     if name is None or type(name) is not str:
         warn("Missing name for %s" % model_name)
@@ -163,6 +166,7 @@ def parse_spray(model_name, data) -> Spray:
             framerate=framerate,
             cost=cost,
             image_path=path,
+            access=access,
         )
 
 
