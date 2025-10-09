@@ -10,6 +10,7 @@
 #define var_spawntime		var_fuser2
 
 #define SPRAY_NAME_LEN 			64
+#define AUTHID_LEN 			    24
 
 
 enum SprayType
@@ -38,5 +39,6 @@ enum _:SPRAY_DATA
     Float:SPRAY_FRAMERATE,
     SPRAY_FRAMES_NUM,
     SPRAY_COST,
-    SPRAY_ACCESS
+    SPRAY_ACCESS,
+    SPRAY_AUTHID[AUTHID_LEN]
 }

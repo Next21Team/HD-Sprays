@@ -28,11 +28,8 @@ public client_set_spray(const iPlayer, &iSprayId, &bool:bSave)
 	if (!is_valid_spray(iSprayId))
 		return PLUGIN_CONTINUE
 
-	new eSprayData[SPRAY_DATA]
-	get_spray_data(iSprayId, eSprayData)
-
 	// If the selected spray is not available to the player, then remove it
-	if (~get_user_flags(iPlayer) & eSprayData[SPRAY_ACCESS])
+	if (!check_spray_access(iPlayer, iSprayId))
 		iSprayId = NULL_SPRAY_ID
 
 	return PLUGIN_CONTINUE
@@ -44,13 +41,10 @@ public client_get_random_spray(const iPlayer, &iSprayId)
 	new iSpraysNum = get_sprays(aSprays)
 	new Array:aAvailableSprays = ArrayCreate()
 
-	for (new i, eSprayData[SPRAY_DATA]; i < iSpraysNum; i++)
+	for (new i; i < iSpraysNum; i++)
 	{
-		ArrayGetArray(aSprays, i, eSprayData)
-		if (~get_user_flags(iPlayer) & eSprayData[SPRAY_ACCESS])
-			continue
-
-		ArrayPushCell(aAvailableSprays, i)
+		if (check_spray_access(iPlayer, i))
+			ArrayPushCell(aAvailableSprays, i)
 	}
 
 	new iAvailableSpraysNum = ArraySize(aAvailableSprays)
@@ -136,14 +130,15 @@ public sprays_menu_handler(iPlayer, iMenu, iItem)
 	menu_item_getinfo(iMenu, iItem, iAccess, szSprayId,
 		charsmax(szSprayId), szSprayName, charsmax(szSprayName))
 
-	if (~get_user_flags(iPlayer) & iAccess)
+	new iSprayId = str_to_num(szSprayId)
+
+	if (is_valid_spray(iSprayId) && !check_spray_access(iPlayer, iSprayId))
 	{
 		client_print(iPlayer, print_center, "%L", iPlayer, "SPRAY_ACCESS")
 		menu_display(iPlayer, iMenu, iItem / 7)
 		return PLUGIN_HANDLED
 	}
 
-	new iSprayId = str_to_num(szSprayId)
 	set_user_spray(iPlayer, iSprayId)
 
 	switch (iSprayId)
@@ -182,6 +177,18 @@ public preview_menu_available(iPlayer, iMenu, iItem)
 	return get_spraysnum() > 1 ? ITEM_ENABLED : ITEM_DISABLED
 }
 
+public spray_menu_item_available(iPlayer, iMenu, iItem)
+{
+	new szSprayId[6], iSprayId
+	menu_item_getinfo(iMenu, iItem, .info=szSprayId, .infolen=charsmax(szSprayId))
+	iSprayId = str_to_num(szSprayId)
+
+	if (is_valid_spray(iSprayId))
+		return check_spray_access(iPlayer, iSprayId) ? ITEM_ENABLED : ITEM_DISABLED
+
+	return ITEM_ENABLED
+}
+
 create_sprays_menu()
 {
 	g_iSprayMenu = menu_create("SPRAY_MENU_TITLE", "sprays_menu_handler")
@@ -189,6 +196,8 @@ create_sprays_menu()
 	menu_additem(g_iSprayMenu, "SPRAY_MENU_PREVIEW", .callback=menu_makecallback("preview_menu_available"))
 	menu_additem(g_iSprayMenu, "SPRAY_MENU_REMOVE", fmt("%d", NULL_SPRAY_ID))
 	menu_additem(g_iSprayMenu, "SPRAY_MENU_RANDOM", fmt("%d", RANDOM_SPRAY_ID))
+
+	new iSprayMenuItemCallback = menu_makecallback("spray_menu_item_available")
 
 	new Array:aSprays
 	new iSpraysNum = get_sprays(aSprays)
@@ -198,7 +207,7 @@ create_sprays_menu()
 		ArrayGetArray(aSprays, i, eSprayData)
 
 		// You can use other spray options to format the menu item
-		menu_additem(g_iSprayMenu, eSprayData[SPRAY_NAME], fmt("%d", i), eSprayData[SPRAY_ACCESS])
+		menu_additem(g_iSprayMenu, eSprayData[SPRAY_NAME], fmt("%d", i), eSprayData[SPRAY_ACCESS], iSprayMenuItemCallback)
 	}
 }
 

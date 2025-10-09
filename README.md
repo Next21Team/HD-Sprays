@@ -34,7 +34,7 @@ The configuration file is *addons/amxmodx/configs/sprays.ini*. Example configura
 ; "name"         "model"              type  body  skin  framerate  width  height  scale  cost  access
 "spray 1"        "spray_pack.mdl"     "n"   0     0     1.0        45.0   45.0    1.0    150   ""
 "spray 2"        "spray_pack.mdl"     "n"   1     0     1.0        45.0   45.0    1.0    300   "t"
-"animated spray" "animated_spray.mdl" "a"   0     0     10.0       40.0   45.0    1.0    500   ""
+"animated spray" "animated_spray.mdl" "a"   0     0     10.0       40.0   45.0    1.0    500   "STEAM_0:1:11111111"
 ```
 
 Parameter description:
@@ -48,7 +48,7 @@ Parameter description:
 * `height` - spray height.
 * `scale` - sprite scale.
 * `cost` - cost. *This parameter can only be used via API*.
-* `access` - access flag. *This parameter can only be used via API*.
+* `access` - access flags or player's steam_id. *This parameter can only be used via API*.
 
 ## API
 API is described in [this file](addons/amxmodx/scripting/include/hdsprays.inc).

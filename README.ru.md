@@ -34,7 +34,7 @@ AMX Mod X плагин для Counter-Strike.
 ; "name"         "model"              type  body  skin  framerate  width  height  scale  cost  access
 "spray 1"        "spray_pack.mdl"     "n"   0     0     1.0        45.0   45.0    1.0    150   ""
 "spray 2"        "spray_pack.mdl"     "n"   1     0     1.0        45.0   45.0    1.0    300   "t"
-"animated spray" "animated_spray.mdl" "a"   0     0     10.0       40.0   45.0    1.0    500   ""
+"animated spray" "animated_spray.mdl" "a"   0     0     10.0       40.0   45.0    1.0    500   "STEAM_0:1:11111111"
 ```
 
 Описание параметров:
@@ -48,7 +48,7 @@ AMX Mod X плагин для Counter-Strike.
 * `height` - высота спрея.
 * `scale` - масштаб спрайта.
 * `cost` - цена. *Данный параметр используется только в API*
-* `access` - флаг доступа. *Данный параметр используется только в API*
+* `access` - флаги доступа или steam_id игрока. *Данный параметр используется только в API*
 
 ## API
 Описание API приведено в [этом файле](addons/amxmodx/scripting/include/hdsprays.inc).

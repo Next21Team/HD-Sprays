@@ -8,7 +8,7 @@
 #include <hdsprays_const>
 
 new const PLUGIN[] =	"HD Sprays"
-new const AUTHOR[] =	"1.4"
+new const AUTHOR[] =	"1.5"
 new const VERSION[] =	"Polarhigh & Psycrow"
 
 new const CHAT_TAG[] = "^4[HD Sprays] ^1"
@@ -85,6 +85,7 @@ new
     g_szStatusText[MAX_PLAYERS + 1][STATUS_TEXT_MAXLEN],
     g_iPlayerShowOwnerSprayEnt[MAX_PLAYERS + 1],
     g_iPlayerPreviewSprayEnt[MAX_PLAYERS + 1],
+    g_szPlayerAuthId[MAX_PLAYERS + 1][AUTHID_LEN],
     g_pCvars[CVAR_LIST],
     g_msgStatusText,
     g_fwdSetUserSpray, g_fwdGetRandomSpray,
@@ -114,6 +115,7 @@ public plugin_natives()
     register_native("get_spray_data", "native_get_spray_data")
     register_native("find_spray_by_name", "native_find_spray_by_name")
     register_native("is_valid_spray", "native_is_valid_spray")
+    register_native("check_spray_access", "native_check_spray_access")
 
     register_native("get_user_spray", "native_get_user_spray")
     register_native("set_user_spray", "native_set_user_spray")
@@ -211,8 +213,9 @@ public client_authorized(iPlayer)
     g_iPlayerShowOwnerSprayEnt[iPlayer] = NULLENT
     g_iPlayerPreviewSprayEnt[iPlayer] = NULLENT
 
-    new szKey[24], szValue[SPRAY_NAME_LEN], iTimestamp
+    new szKey[AUTHID_LEN], szValue[SPRAY_NAME_LEN], iTimestamp
     get_user_authid(iPlayer, szKey, charsmax(szKey))
+    copy(g_szPlayerAuthId[iPlayer], AUTHID_LEN - 1, szKey)
 
     if (nvault_lookup(g_iVaultSprays, szKey, szValue, charsmax(szValue), iTimestamp))
     {
@@ -542,18 +545,21 @@ set_player_spray(iPlayer, iSprayId, bool:bSave)
 
     if (bSave)
     {
-        new szKey[24]
-        get_user_authid(iPlayer, szKey, charsmax(szKey))
-
         switch (iSprayId)
         {
-            case NULL_SPRAY_ID: nvault_remove(g_iVaultSprays, szKey)
-            case RANDOM_SPRAY_ID: nvault_set(g_iVaultSprays, szKey, fmt("@%d", RANDOM_SPRAY_ID))
+            case NULL_SPRAY_ID:
+            {
+                nvault_remove(g_iVaultSprays, g_szPlayerAuthId[iPlayer])
+            }
+            case RANDOM_SPRAY_ID:
+            {
+                nvault_set(g_iVaultSprays, g_szPlayerAuthId[iPlayer], fmt("@%d", RANDOM_SPRAY_ID))
+            }
             default:
             {
                 new eSprayData[SPRAY_DATA]
                 ArrayGetArray(g_aSprays, iSprayId, eSprayData)
-                nvault_set(g_iVaultSprays, szKey, eSprayData[SPRAY_NAME])
+                nvault_set(g_iVaultSprays, g_szPlayerAuthId[iPlayer], eSprayData[SPRAY_NAME])
             }
         }
     }
@@ -777,9 +783,19 @@ bool:load_sprays(const szSpraysFile[])
         eSprayData[SPRAY_SCALE] = floatmax(0.000001, str_to_float(szSprayScale))
         eSprayData[SPRAY_FRAMERATE] = floatmax(0.000001, str_to_float(szSprayFrameRate))
         eSprayData[SPRAY_COST] = str_to_num(szSprayCost)
-        eSprayData[SPRAY_ACCESS] = read_flags(szSprayAccess)
         eSprayData[SPRAY_FORMAT] = iSprayFormat
         eSprayData[SPRAY_FRAMES_NUM] = iSprayFramesNum
+
+        if (contain(szSprayAccess, "STEAM") == 0)
+        {
+            copy(eSprayData[SPRAY_AUTHID], AUTHID_LEN - 1, szSprayAccess)
+            eSprayData[SPRAY_ACCESS] = 0
+        }
+        else
+        {
+            arrayset(eSprayData[SPRAY_AUTHID], 0, AUTHID_LEN)
+            eSprayData[SPRAY_ACCESS] = read_flags(szSprayAccess)
+        }
 
         ArrayPushArray(g_aSprays, eSprayData)
         TrieSetCell(g_trieSprayMap, szSprayName, g_iTotalSprays)
@@ -1090,6 +1106,21 @@ public native_find_spray_by_name(plugin_id, argc)
 public bool:native_is_valid_spray(plugin_id, argc)
 {
     return is_valid_spray(get_param(1))
+}
+
+public bool:native_check_spray_access(plugin_id, argc)
+{
+    new iPlayer = get_param(1)
+    new iSprayId = get_param(2)
+
+    static eSprayData[SPRAY_DATA]
+    ArrayGetArray(g_aSprays, iSprayId, eSprayData)
+
+    if (eSprayData[SPRAY_AUTHID][0] == 'S')
+        return bool:equal(g_szPlayerAuthId[iPlayer], eSprayData[SPRAY_AUTHID])
+
+    new iSprayFlags = eSprayData[SPRAY_ACCESS]
+    return (get_user_flags(iPlayer) & iSprayFlags) == iSprayFlags
 }
 
 public native_get_user_spray(plugin_id, argc)

@@ -80,6 +80,17 @@ native get_spray_data(const iSprayId, eSprayData[SPRAY_DATA]);
 native bool:is_valid_spray(const iSprayId);
 
 /**
+* Checks if the spray is available to the player.
+*
+* @param    iPlayer         Client index
+* @param    iSprayId        Spray index
+*
+*
+* @return                   true if available
+*/
+native bool:check_spray_access(const iPlayer, const iSprayId);
+
+/**
 * Get the client's current spray index.
 *
 * @param    iPlayer         Client index
