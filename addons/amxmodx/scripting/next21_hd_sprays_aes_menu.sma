@@ -11,6 +11,7 @@ new const AUTHOR[] = "Psycrow"
 new const CHAT_TAG[] = "^4[HD Sprays] "
 
 new Array:g_aPlayerSprays[MAX_PLAYERS + 1]
+new g_iSprayMenuItemCallback
 
 public plugin_init()
 {
@@ -23,6 +24,7 @@ public plugin_init()
 	register_clcmd("hd_spray", "sprays_menu_cmd")
 
 	arrayset(g_aPlayerSprays, Invalid_Array, sizeof g_aPlayerSprays)
+	g_iSprayMenuItemCallback = menu_makecallback("spray_menu_item_available")
 }
 
 public plugin_cfg()
@@ -53,7 +55,7 @@ public client_set_spray(const iPlayer, &iSprayId, &bool:bSave)
 	get_spray_data(iSprayId, eSprayData)
 
 	// If the selected spray is not available to the player, then remove it
-	if (~get_user_flags(iPlayer) & eSprayData[SPRAY_ACCESS])
+	if (!check_spray_access(iPlayer, iSprayId))
 		iSprayId = NULL_SPRAY_ID
 
 	return PLUGIN_CONTINUE
@@ -67,9 +69,10 @@ public client_get_random_spray(const iPlayer, &iSprayId)
 
 	for (new i, eSprayData[SPRAY_DATA]; i < iSpraysNum; i++)
 	{
-		ArrayGetArray(aSprays, i, eSprayData)
-		if (~get_user_flags(iPlayer) & eSprayData[SPRAY_ACCESS])
+		if (!check_spray_access(iPlayer, i))
 			continue
+
+		ArrayGetArray(aSprays, i, eSprayData)
 
 		if (eSprayData[SPRAY_COST] > 0 && !has_player_spray(iPlayer, i))
 			continue
@@ -113,7 +116,7 @@ show_sprays_menu(iPlayer, iPage=0)
 		if (eSprayData[SPRAY_COST] > 0 && !has_player_spray(iPlayer, i))
 			format(szItemName, charsmax(szItemName), "\r[%d pt.] %s", eSprayData[SPRAY_COST], szItemName)
 
-		menu_additem(iMenu, szItemName, fmt("%d", i), eSprayData[SPRAY_ACCESS])
+		menu_additem(iMenu, szItemName, fmt("%d", i), eSprayData[SPRAY_ACCESS], g_iSprayMenuItemCallback)
 	}
 
 	menu_setprop(iMenu, MPROP_BACKNAME, fmt("%L", iPlayer, "BACK"))
@@ -138,14 +141,14 @@ public sprays_menu_handler(iPlayer, iMenu, iItem)
 
 	menu_destroy(iMenu)
 
-	if (~get_user_flags(iPlayer) & iAccess)
+	new iSprayId = str_to_num(szSprayId)
+
+	if (is_valid_spray(iSprayId) && !check_spray_access(iPlayer, iSprayId))
 	{
 		client_print(iPlayer, print_center, "%L", iPlayer, "SPRAY_ACCESS")
 		show_sprays_menu(iPlayer, iItem / 7)
 		return PLUGIN_HANDLED
 	}
-
-	new iSprayId = str_to_num(szSprayId)
 
 	if (iSprayId == RANDOM_SPRAY_ID)
 	{
@@ -308,6 +311,18 @@ public sell_spray_accept_handler(iPlayer, iMenu, iItem)
 	return PLUGIN_HANDLED
 }
 
+public spray_menu_item_available(iPlayer, iMenu, iItem)
+{
+	new szSprayId[6], iSprayId
+	menu_item_getinfo(iMenu, iItem, .info=szSprayId, .infolen=charsmax(szSprayId))
+	iSprayId = str_to_num(szSprayId)
+
+	if (is_valid_spray(iSprayId))
+		return check_spray_access(iPlayer, iSprayId) ? ITEM_ENABLED : ITEM_DISABLED
+
+	return ITEM_ENABLED
+}
+
 load_player_sprays(iPlayer)
 {
 	new Array:aPlayerSprays = g_aPlayerSprays[iPlayer]
@@ -321,9 +336,10 @@ load_player_sprays(iPlayer)
 
 	for (new i, eSprayData[SPRAY_DATA]; i < iSpraysNum; i++)
 	{
-		ArrayGetArray(aSprays, i, eSprayData)
-		if (~get_user_flags(iPlayer) & eSprayData[SPRAY_ACCESS])
+		if (!check_spray_access(iPlayer, i))
 			continue
+
+		ArrayGetArray(aSprays, i, eSprayData)
 
 		if (eSprayData[SPRAY_COST] == 0)
 			ArrayPushCell(aPlayerSprays, i)

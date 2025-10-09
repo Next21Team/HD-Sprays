@@ -54,6 +54,8 @@ Parameter description:
 API is described in [this file](addons/amxmodx/scripting/include/hdsprays.inc).
 An example with menu implementation is presented in plugin [next21_hd_sprays_menu.sma](addons/amxmodx/scripting/next21_hd_sprays_menu.sma). Open sprays menu is done with the command `say /spray`.
 
+A menu with AES bonus support is available in plugin [next21_hd_sprays_aes_menu.sma](addons/amxmodx/scripting/next21_hd_sprays_aes_menu.sma). For this to work, you must enable the AMXX module `sqlite`.
+
 ## Spray generator
 To quickly create sprays from a set of images, it is recommended to use the tool **sprays_gen**. [Detailed description of the tool](utils/sprays_gen/README.md)
 

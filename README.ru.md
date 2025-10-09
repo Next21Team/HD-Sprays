@@ -54,6 +54,8 @@ AMX Mod X плагин для Counter-Strike.
 Описание API приведено в [этом файле](addons/amxmodx/scripting/include/hdsprays.inc).
 Пример с реализацией меню представлен в плагине [next21_hd_sprays_menu.sma](addons/amxmodx/scripting/next21_hd_sprays_menu.sma). Открытие меню выбора спрея производится командой `say /spray`.
 
+Меню с поддержкой бонусов AES доступно в плагине [next21_hd_sprays_aes_menu.sma](addons/amxmodx/scripting/next21_hd_sprays_aes_menu.sma). Для работы необходимо включить AMXX-модуль `sqlite`.
+
 ## Генератор спреев
 Для быстрого создания спреев из набора изображений рекомендуется использовать инструмент **sprays_gen**. [Подробное описание инструмента](utils/sprays_gen/README.ru.md)
 
