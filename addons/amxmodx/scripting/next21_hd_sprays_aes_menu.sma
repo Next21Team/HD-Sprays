@@ -381,7 +381,9 @@ remove_player_spray(iPlayer, iSprayId)
 	if (aPlayerSprays == Invalid_Array)
 		return
 
-	ArrayDeleteItem(aPlayerSprays, iSprayId)
+	new index = ArrayFindValue(aPlayerSprays, iSprayId)
+	if (index > -1)
+		ArrayDeleteItem(aPlayerSprays, index)
 }
 
 // ****** SQL DB ******
