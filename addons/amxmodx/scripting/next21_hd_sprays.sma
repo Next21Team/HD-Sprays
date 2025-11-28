@@ -462,7 +462,7 @@ public spray_think(iSprayEnt, aParams[THINK_PARAMS])
 
 spawn_spray_ent(eSprayData[SPRAY_DATA])
 {
-    new iSprayEnt = rg_create_entity(CLASSNAME_BASE, true)
+    new iSprayEnt = rg_create_entity(CLASSNAME_BASE)
     if (is_nullent(iSprayEnt))
         return NULLENT
 
