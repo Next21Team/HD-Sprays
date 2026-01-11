@@ -18,6 +18,7 @@ new const CHAT_TAG[] = "^4[HD Sprays] ^1"
 
 #define PRESS_DELAY				0.2	// delay for using the IMPULSE_SPRAY
 #define VAULT_DAYS 				30 // duration of storage of the selected spray by the player
+#define VAULT_LOAD_DELAY        3.0 // delay before loading vault data after client authorized
 
 #define IMPULSE_SPRAY           201
 
@@ -205,6 +206,7 @@ public plugin_init()
 public plugin_end()
 {
     nvault_close(g_iVaultSprays)
+    g_iVaultSprays = INVALID_HANDLE
 }
 
 public client_authorized(iPlayer)
@@ -213,16 +215,11 @@ public client_authorized(iPlayer)
     g_iPlayerShowOwnerSprayEnt[iPlayer] = NULLENT
     g_iPlayerPreviewSprayEnt[iPlayer] = NULLENT
 
-    new szKey[AUTHID_LEN], szValue[SPRAY_NAME_LEN], iTimestamp
-    get_user_authid(iPlayer, szKey, charsmax(szKey))
-    copy(g_szPlayerAuthId[iPlayer], AUTHID_LEN - 1, szKey)
+    get_user_authid(iPlayer, g_szPlayerAuthId[iPlayer], AUTHID_LEN - 1)
 
-    if (nvault_lookup(g_iVaultSprays, szKey, szValue, charsmax(szValue), iTimestamp))
-    {
-        new iSprayId = NULL_SPRAY_ID
-        TrieGetCell(g_trieSprayMap, szValue, iSprayId)
-        set_player_spray(iPlayer, iSprayId, false)
-    }
+    // wait before loading user flags by other plugins
+    remove_task(iPlayer)
+    set_task(VAULT_LOAD_DELAY, "load_nvault_sprays", iPlayer)
 }
 
 public client_disconnected(iPlayer)
@@ -325,6 +322,25 @@ public OnMessageStatusText(iMsgId, iMsgDest, iMsgEnt)
 {
     if (iMsgEnt)
         get_msg_arg_string(2, g_szStatusText[iMsgEnt], STATUS_TEXT_MAXLEN - 1)
+}
+
+public load_nvault_sprays(iPlayer)
+{
+    if (g_iVaultSprays == INVALID_HANDLE)
+        return
+
+    if (!is_user_authorized(iPlayer))
+        return
+
+    new szKey[AUTHID_LEN], szValue[SPRAY_NAME_LEN], iTimestamp
+    copy(szKey, charsmax(szKey), g_szPlayerAuthId[iPlayer])
+
+    if (nvault_lookup(g_iVaultSprays, szKey, szValue, charsmax(szValue), iTimestamp))
+    {
+        new iSprayId = NULL_SPRAY_ID
+        TrieGetCell(g_trieSprayMap, szValue, iSprayId)
+        set_player_spray(iPlayer, iSprayId, false)
+    }
 }
 
 create_spray(iPlayer, iSprayId)
