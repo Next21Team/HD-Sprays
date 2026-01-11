@@ -114,7 +114,10 @@ show_sprays_menu(iPlayer, iPage=0)
 		formatex(szItemName, charsmax(szItemName), "\w%s", eSprayData[SPRAY_NAME])
 
 		if (eSprayData[SPRAY_COST] > 0 && !has_player_spray(iPlayer, i))
-			format(szItemName, charsmax(szItemName), "\r[%d pt.] %s", eSprayData[SPRAY_COST], szItemName)
+		{
+			format(szItemName, charsmax(szItemName), "%L %s",
+				iPlayer, "SPRAY_COST_MENU_PREFIX", eSprayData[SPRAY_COST], szItemName)
+		}
 
 		menu_additem(iMenu, szItemName, fmt("%d", i), eSprayData[SPRAY_ACCESS], g_iSprayMenuItemCallback)
 	}
